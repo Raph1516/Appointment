@@ -2,37 +2,29 @@ import sqlite3
 from tkinter import *
 from tkinter import messagebox
 
-# Create the main application window
 root = Tk()
 
-# Load the background image and button images for show/hide
 bg = PhotoImage(file='background.png') 
 show_img = PhotoImage(file='show.png') 
 hide_img = PhotoImage(file='hide.png') 
 
-# Configure the window
 root.geometry('800x530+400+100')
 root.title("Appointment System")
 
-# Create a canvas and set the background
 canvas = Canvas(root, width=800, height=530)
 canvas.pack(fill="both", expand=True)
 canvas.create_image(0, 0, image=bg, anchor="nw")
 
-# Store the canvas text IDs to manage and clear them
 canvas_text_items = []
 
-# SQLite3 Database setup
 def create_tables():
     conn = sqlite3.connect('appointment_system.db')
     c = conn.cursor()
 
-    # Create Users table if it doesn't exist
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                     username TEXT PRIMARY KEY,
                     password TEXT)''')
 
-    # Create Patients table if it doesn't exist
     c.execute('''CREATE TABLE IF NOT EXISTS patients (
                     name TEXT,
                     contact TEXT,
@@ -43,7 +35,6 @@ def create_tables():
 
 create_tables()
 
-# Function to clear canvas widgets (except the background and remove canvas text)
 def clear_canvas():
     for widget in root.winfo_children():
         if widget != canvas:
@@ -52,7 +43,6 @@ def clear_canvas():
         canvas.delete(text_item)
     canvas_text_items.clear()
 
-# Toggle password visibility function
 def toggle_password(entry_field, toggle_button, show_state):
     if show_state[0]:
         entry_field.config(show="")
@@ -62,7 +52,6 @@ def toggle_password(entry_field, toggle_button, show_state):
         toggle_button.config(image=show_img)
     show_state[0] = not show_state[0]
 
-# Functionality for the Login button
 def login():
     clear_canvas()
 
@@ -105,7 +94,6 @@ def login():
     Button(root, text="Submit", command=submit_login, font=("Arial", 12), bg="#3498db", fg="white").place(x=350, y=260, width=100, height=30)
     Button(root, text="Back", command=show_main_menu, font=("Arial", 12), bg="#e74c3c", fg="white").place(x=350, y=320, width=100, height=30)
 
-# Functionality for the Sign Up button
 def signup():
     clear_canvas()
 
@@ -159,7 +147,6 @@ def signup():
     Button(root, text="Submit", command=submit_signup, font=("Arial", 12), bg="#2ecc71", fg="white").place(x=350, y=320, width=100, height=30)
     Button(root, text="Back", command=show_main_menu, font=("Arial", 12), bg="#e74c3c", fg="white").place(x=350, y=380, width=100, height=30)
 
-# Patient's Info functionality
 def patients_info():
     clear_canvas()
 
@@ -180,7 +167,6 @@ def patients_info():
     address_entry = Entry(root, font=("Arial", 12))
     address_entry.place(x=400, y=250, width=200, height=entry_height)
 
-    # New text for "Confirm Appointment"
     canvas_text_items.append(canvas.create_text(400, 320, text="Confirm Appointment", font=("Arial", 14, "bold"), fill="white"))
 
     def confirm_info():
@@ -199,61 +185,53 @@ def patients_info():
         else:
             messagebox.showerror("Error", "All fields are required!")
 
-    # Yes and No buttons for confirmation
     Button(root, text="Yes", command=confirm_info, font=("Arial", 12), bg="#2ecc71", fg="white").place(x=300, y=370, width=100, height=30)
     Button(root, text="No", command=main_menu, font=("Arial", 12), bg="#e74c3c", fg="white").place(x=450, y=370, width=100, height=30)
 
-# Global variable to store the currently selected patient rowid
 selected_patient_rowid = None
 
-# Show Data function
 def show_data():
-    global selected_patient_rowid  # Use the global variable to track the selected patient
-    clear_canvas()  # Ensure the canvas is cleared when navigating to show_data
+    global selected_patient_rowid  
+    clear_canvas() 
 
     canvas_text_items.append(canvas.create_text(400, 80, text="Patient Data", font=("Arial", 20, "bold"), fill="white"))
 
-    # Fetch patient data from the database
+    
     conn = sqlite3.connect('appointment_system.db')
     c = conn.cursor()
-    c.execute("SELECT rowid, name, contact, address FROM patients")  # Fetch the rowid along with data
+    c.execute("SELECT rowid, name, contact, address FROM patients") 
     patients = c.fetchall()
     conn.close()
 
     if patients:
-        # Display the patient data in a table-like format
         y_position = 150
         canvas_text_items.append(canvas.create_text(150, y_position, text="Name", font=("Arial", 12, "bold"), fill="white"))
         canvas_text_items.append(canvas.create_text(300, y_position, text="Contact No.", font=("Arial", 12, "bold"), fill="white"))
         canvas_text_items.append(canvas.create_text(500, y_position, text="Address", font=("Arial", 12, "bold"), fill="white"))
         y_position += 30  # Adjust for the header row
 
-        # Creating clickable text for each patient's data
         for patient in patients:
             rowid, name, contact, address = patient
             name_item = canvas.create_text(150, y_position, text=name, font=("Arial", 12), fill="white", tags=f"name_{rowid}")
             contact_item = canvas.create_text(300, y_position, text=contact, font=("Arial", 12), fill="white", tags=f"contact_{rowid}")
             address_item = canvas.create_text(500, y_position, text=address, font=("Arial", 12), fill="white", tags=f"address_{rowid}")
 
-            # Bind the text items to the select_patient function
             canvas.tag_bind(f"name_{rowid}", "<Button-1>", lambda event, id=rowid: select_patient(event, id))
             canvas.tag_bind(f"contact_{rowid}", "<Button-1>", lambda event, id=rowid: select_patient(event, id))
             canvas.tag_bind(f"address_{rowid}", "<Button-1>", lambda event, id=rowid: select_patient(event, id))
 
-            y_position += 60  # Adjust the position for the next patient's data
+            y_position += 60 
 
-        # Create Delete Button (above the Back button)
         Button(root, text="Delete", command=delete_selected_patient, font=("Arial", 12), bg="#e74c3c", fg="white").place(x=325, y=y_position + 30, width=150, height=30)
 
     else:
         canvas_text_items.append(canvas.create_text(400, 150, text="No patient data found", font=("Arial", 12), fill="white"))
 
-    # Back button to go back to the main menu
     Button(root, text="Back", command=main_menu, font=("Arial", 12), bg="#e74c3c", fg="white").place(x=350, y=y_position + 80, width=100, height=30)
 
-# Main Menu function
+
 def main_menu():
-    clear_canvas()  # Ensure the canvas is cleared before displaying the main menu
+    clear_canvas()
 
     canvas_text_items.append(canvas.create_text(400, 100, text="Main Menu", font=("Arial", 24, "bold"), fill="white"))
 
@@ -262,33 +240,26 @@ def main_menu():
     Button(root, text="Log Out", font=("Arial", 12), bg="#e74c3c", fg="white", command=show_main_menu).place(relx=0.5, rely=0.6, anchor="center", width=150, height=40)
 
 
-
-# Function to select a patient (highlight the data)
 def select_patient(event, rowid):
     global selected_patient_rowid
 
-    # If another patient was previously selected, remove the highlight
     if selected_patient_rowid is not None:
         canvas.itemconfig(f"name_{selected_patient_rowid}", fill="white")
         canvas.itemconfig(f"contact_{selected_patient_rowid}", fill="white")
         canvas.itemconfig(f"address_{selected_patient_rowid}", fill="white")
 
-    # Highlight the clicked data
     canvas.itemconfig(f"name_{rowid}", fill="yellow")
     canvas.itemconfig(f"contact_{rowid}", fill="yellow")
     canvas.itemconfig(f"address_{rowid}", fill="yellow")
 
-    # Store the rowid of the selected patient
     selected_patient_rowid = rowid
 
-# Function to delete the selected patient
 def delete_selected_patient():
     global selected_patient_rowid
 
     if selected_patient_rowid is None:
         messagebox.showerror("Error", "No patient selected!")
     else:
-        # Prompt the user for confirmation before deletion
         if messagebox.askyesno("Delete", "Are you sure you want to delete this patient?"):
             conn = sqlite3.connect('appointment_system.db')
             c = conn.cursor()
@@ -296,11 +267,11 @@ def delete_selected_patient():
             conn.commit()
             conn.close()
             messagebox.showinfo("Deleted", "Patient data deleted successfully.")
-            selected_patient_rowid = None  # Reset the selected patient
-            show_data()  # Refresh the data to reflect the change
+            selected_patient_rowid = None 
+            show_data() 
 
 def main_menu():
-    clear_canvas()  # Ensure the canvas is cleared before displaying the main menu
+    clear_canvas() 
 
     canvas_text_items.append(canvas.create_text(400, 100, text="Main Menu", font=("Arial", 24, "bold"), fill="white"))
 
@@ -309,14 +280,13 @@ def main_menu():
     Button(root, text="Log Out", font=("Arial", 12), bg="#e74c3c", fg="white", command=show_main_menu).place(relx=0.5, rely=0.6, anchor="center", width=150, height=40)
 
 def show_main_menu():
-    clear_canvas()  # Ensure the canvas is cleared before displaying the main menu
+    clear_canvas() 
 
     canvas_text_items.append(canvas.create_text(400, 100, text="Appointment System", font=("Arial", 24, "bold"), fill="white"))
 
     Button(root, text="Login", command=login, font=("Arial", 12, "bold"), bg="#3498db", fg="white", width=15, height=2).place(relx=0.5, rely=0.4, anchor="center")
     Button(root, text="Sign Up", command=signup, font=("Arial", 12, "bold"), bg="#2ecc71", fg="white", width=15, height=2).place(relx=0.5, rely=0.6, anchor="center")
-
-# Calling the show_main_menu to ensure it's displayed correctly when the app starts
+    
 show_main_menu()
 
 root.mainloop()
